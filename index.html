@@ -1,0 +1,236 @@
+<html>
+<head>
+	<link rel="stylesheet" href="./css/style.css">
+	<script src='./js/jQuery.min.js'></script>
+	<script src='./js/three.min.js'></script>
+	<script src='./js/panolens.js'></script>
+	<script src='./js/FBXLoader.js'></script>
+	<script src='./js/inflate.min.js'></script>
+	<script src="./js/camera-controls.js"></script>
+	<script src="./js/OrbitControls.js"></script>
+	<script src="./js/OBJLoader.js"></script>
+	<script src="./js/MTLLoader.js"></script>
+	<script src="./js/sampleJson.js"></script>
+	<script src="./js/script.js"></script>
+	<!--<script src='VRButton.js'></script>
+	<script src='main.js'></script>-->
+</head>
+<body>
+<div id="container1" class="infoContainerStyle">
+	<label class="infoHeadingStyle" ></label>
+	<label class="infoTextStyle" ></label>
+	<button class="viewButton" onclick="openContainer()" >View</button>
+</div>
+
+<div class="radioButtonContainerStyle">
+	<label class="container">Left View
+	  <input type="radio" name="roomView" value="Left View">
+	  <span class="checkmark"></span>
+	</label>
+	<label class="container">Front View
+	  <input type="radio" checked="checked" name="roomView" value="Front View">
+	  <span class="checkmark"></span>
+	</label>
+	<label class="container">Right View
+	  <input type="radio" name="roomView" value="Right View">
+	  <span class="checkmark"></span>
+	</label>
+</div>
+
+<div id="toggleButtonContainerId" style="position:absolute;width:150px;height:90px;top:50px;right:20px">
+	<label class="switch">
+	  <input type="checkbox" id="toggleButtonId">
+	  <span class="slider round"></span>
+	</label>
+	<label id="toggleBtnTextId" style="position:absolute;bottom:15px;left:10px;color:#888888;">Toggle button for ON/OFF indicaters</label>
+</div>
+
+<canvas id="view3d" style="position:absolute;top:0px;left:0px;display:none;"></canvas>
+<div class="backButtonContainer">
+	<label class="ObjctInfoText" >Mouse scrollwheel for Zoom, Mouse left click for rotation, <br/> 
+		&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&nbsp;Mouse right click for drag</label>
+	<button id="backButton" onclick="BackButtonClick()" class="viewButton" style="bottom:10px;left:140px;background:#333333;">Back</button>
+</div>
+
+<script>
+
+	const panoFront = new PANOLENS.ImagePanorama( './BedRoom/Maple Bed Drape_Cam_02_360.jpg' );
+	const panoLeft = new PANOLENS.ImagePanorama( './BedRoom/Maple Bed Drape_Cam_04_360.jpg' );
+	const panoRight = new PANOLENS.ImagePanorama( './BedRoom/Maple Bed Drape_Cam_05_360.jpg' );
+	const viewer = new PANOLENS.Viewer({ enableReticle: false, output: 'console', viewIndicator: true, autoRotate: false, autoRotateSpeed: 2, autoRotateActivationDuration: 5000, dwellTime: 1 , cameraFov:54 });
+	viewer.add( panoFront );
+	viewer.add( panoLeft );
+	viewer.add( panoRight );
+	panoFront.addEventListener( 'progress', onProgress );
+	panoFront.addEventListener( 'enter', onEnter );
+	panoLeft.addEventListener( 'progress', onProgress );
+	panoLeft.addEventListener( 'enter', onEnter );
+	panoRight.addEventListener( 'progress', onProgress );
+	panoRight.addEventListener( 'enter', onEnter );
+	insertTextOnInfo();
+	function insertTextOnInfo()
+	{	
+		var infoText = "THREAD COUNT - 300 TC PERCALE <br/><br/>";
+		infoText = infoText + "CONSTRUCTION -60*60/164*64/2 <br/><br/>";
+		infoText = infoText + "BLENDS - 100% COTTON <br/><br/>";
+		infoText = infoText + "PRINT TYPE - PIGMENT PRINT <br/><br/>";
+		infoText = infoText + "SCREEN - 640 MM/01C <br/><br/>";
+		infoText = infoText + "FINISH - NORAL SOFT";
+		
+		$(".infoHeadingStyle").text("EURO SHAM - 26 INCH X 26 INCH");
+		$(".infoTextStyle").html(infoText);
+	}
+	
+	function onEnter ( event ) {
+		//console.log("-------onEnter--------");
+	}
+
+    function onProgress ( event ) {
+        progress = event.progress.loaded / event.progress.total * 100;
+        if ( progress === 100 ) {
+			//console.log(event.target);
+			setTimeout(function(){
+				ResetCameraView();
+				//ChangeSelectButton(event.target.name);
+			} , 600);
+        }
+    }
+	
+	function ResetCameraView()
+	{
+		viewer.setCameraFov(54);
+		viewer.camera.position.x = 90;
+		viewer.camera.position.y = 0;
+		viewer.camera.position.z = 1;
+	}
+
+	function BackButtonClick()
+	{
+		$("#view3d").css("display","none");
+		$(".backButtonContainer").css("display","none");
+		$(".infoContainerStyle").css("display","none");
+	}
+
+	function openContainer()
+	{
+		$("#view3d").css("display","block");
+		$(".backButtonContainer").css("display","block");
+		start();
+	}
+	
+	function EnableToggleContaier(pano)
+	{
+		viewer.setPanorama( pano);
+		if(pano.children.length > 0)
+		{
+			$("#toggleButtonContainerId").css("display","block");
+			if($("#toggleButtonId").prop("checked") == true){
+                pano.toggleInfospotVisibility(true);
+            }
+			else{
+				pano.toggleInfospotVisibility(false);
+			}
+		}
+		else
+		{
+			$("#toggleButtonContainerId").css("display","none");
+		}
+	}
+	
+	$('input:radio[name="roomView"]').change(function(){
+        if ($(this).is(':checked')) {
+			if($(this).val() == "Left View")
+			{
+				EnableToggleContaier(panoLeft);
+			}
+			else if($(this).val() == "Front View")
+			{
+				EnableToggleContaier(panoFront);
+			}
+			else if($(this).val() == "Right View")
+			{
+				EnableToggleContaier(panoRight);
+			}
+        }
+    });
+	
+	$('#toggleButtonId').change(function(){
+        if ($(this).is(':checked')) {
+			$("#toggleBtnTextId").css("color","#111111");
+			panoFront.toggleInfospotVisibility(true);
+        }
+		else{
+			$("#toggleBtnTextId").css("color","#888888");
+			panoFront.toggleInfospotVisibility(false);
+		}
+    });
+
+	var infospot1 = new PANOLENS.Infospot( 200, PANOLENS.DataImage.Info );
+    infospot1.position.set( 4949.34, -685.85, 9.65 );
+    infospot1.addHoverElement( document.getElementById( 'container1' ), 200 );
+	infospot1.addEventListener( 'hover', function(event){
+        $(".infoContainerStyle").css("display","none");
+        $(event.target.element).css("display","block");
+    });
+	panoFront.add( infospot1 );
+	
+	var infospot2 = new PANOLENS.Infospot( 200, PANOLENS.DataImage.Info );
+    infospot2.position.set( 4665.19, -1549.96, 889.93 );
+    infospot2.addHoverElement( document.getElementById( 'container1' ), 200 );
+	infospot2.addEventListener( 'hover', function(event){
+        $(".infoContainerStyle").css("display","none");
+        $(event.target.element).css("display","block");
+    });
+	panoFront.add( infospot2 );
+	
+	var infospot3 = new PANOLENS.Infospot( 200, PANOLENS.DataImage.Info );
+    infospot3.position.set( 4901.17, -594.07, -722.83 );
+    infospot3.addHoverElement( document.getElementById( 'container1' ), 200 );
+	infospot3.addEventListener( 'hover', function(event){
+        $(".infoContainerStyle").css("display","none");
+        $(event.target.element).css("display","block");
+    });
+	panoFront.add( infospot3 );
+	
+	var infospot4 = new PANOLENS.Infospot( 200, PANOLENS.DataImage.Info );
+    infospot4.position.set( 4970.70, -361.05, -288.43 );
+    infospot4.addHoverElement( document.getElementById( 'container1' ), 200 );
+	infospot4.addEventListener( 'hover', function(event){
+        $(".infoContainerStyle").css("display","none");
+        $(event.target.element).css("display","block");
+    });
+	panoFront.add( infospot4 );
+	
+	var infospot5 = new PANOLENS.Infospot( 200, PANOLENS.DataImage.Info );
+    infospot5.position.set( 4956.75, -479.42, 334.48 );
+    infospot5.addHoverElement( document.getElementById( 'container1' ), 200 );
+	infospot5.addEventListener( 'hover', function(event){
+        $(".infoContainerStyle").css("display","none");
+        $(event.target.element).css("display","block");
+    });
+	panoFront.add( infospot5 );
+	
+	var infospot6 = new PANOLENS.Infospot( 200, PANOLENS.DataImage.Info );
+    infospot6.position.set( 4906.56, -118.99, -909.82 );
+    infospot6.addHoverElement( document.getElementById( 'container1' ), 200 );
+	infospot6.addEventListener( 'hover', function(event){
+        $(".infoContainerStyle").css("display","none");
+        $(event.target.element).css("display","block");
+    });
+	panoFront.add( infospot6 );
+	
+	var infospot7 = new PANOLENS.Infospot( 200, PANOLENS.DataImage.Info );
+    infospot7.position.set( 4841.75, -416.48, 1151.87 );
+    infospot7.addHoverElement( document.getElementById( 'container1' ), 200 );
+	infospot7.addEventListener( 'hover', function(event){
+        $(".infoContainerStyle").css("display","none");
+        $(event.target.element).css("display","block");
+    });
+	panoFront.add( infospot7 );
+	setTimeout(function(){ panoFront.toggleInfospotVisibility(false); }, 1000);
+	
+</script>
+
+
+</body>
+</html>
